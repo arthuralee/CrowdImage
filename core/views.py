@@ -11,9 +11,28 @@ import json
 ##### VIEWS #####
 #################
 
+# helper function to convert polygon into a 2d array of selected pixels
+def poly2pixels(poly_verts, nx, ny):
+  # Create vertex coordinates for each grid cell...
+  # (<0,0> is at the top left of the grid in this system)
+  x, y = np.meshgrid(np.arange(nx), np.arange(ny))
+  x, y = x.flatten(), y.flatten()
+
+  points = np.vstack((x,y)).T
+
+  grid = points_inside_poly(points, poly_verts)
+  grid = grid.reshape((ny,nx))
+
+  return grid
+
 @require_POST
 @csrf_exempt
 def submitPic(request):
+  # should get from POST data instead
+  poly = [(708,88),(797,108),(808,192),(825,414),(807,468),(680,468),(542,457),(501,435),(505,383),(631,329),(660,254),(606,206),(629,142),(675,80)]
+  width = 950
+  height = 700
+  pixelarray = poly2pixels(poly, width, height) # result in pixelarray
 	return HttpResponse()
 
 @require_GET
