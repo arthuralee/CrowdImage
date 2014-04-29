@@ -47,7 +47,6 @@ class Block(models.Model):
 	# gets the oldest block in the DB
 	@classmethod
 	def pickBlock(self):
-		block
 		try:
 			return self.objects.filter(done=False).earliest('dateTime')
 		except Exception, e: #DoesNotExist

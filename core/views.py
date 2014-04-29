@@ -51,8 +51,8 @@ def submitPic(request):
     re_width, re_height = reImg.size
 
     # send image
-    response = HttpResponse(mimetype="image/jpeg")
-    reImg.save(response, "jpeg")
+    response = HttpResponse(mimetype="image/png")
+    reImg.save(response, "png")
     return response
     # comparison = compareImgs(img, reImg)
     # return HttpResponse("ERRORS --> r: %d, g: %d, b: %d, a: %d" % comparison)
@@ -61,13 +61,14 @@ def submitPic(request):
 @require_GET
 @csrf_exempt
 def getBlock(request):
-    id = "abcd1234"
-    height = 100
-    width = 100
-    pixels = generatePixels(100)
-    data = {'id': id, 'height':height,
-            'width':width, 'pixels':pixels}
-    return JsonResponse(data)
+    block = models.Block.pickBlock()
+    if block == None:
+        return JsonResponse({})
+    else:
+        pixels = pixelsToFrontEnd(block.getPixels())
+        data = {'id': block.key, 'height':100,
+            'width':100, 'pixels':pixels}
+        return JsonResponse(data)
 
 @require_POST
 @csrf_exempt
@@ -77,6 +78,27 @@ def returnBlock(request):
 ###################
 ##### HELPERS #####
 ###################
+
+# takes 2D array of pixels as 4 channels and returns
+# 2D array of pixels as (hex,alpha[0-1])
+def pixelsToFrontEnd(pixelsArray):
+    width = len(pixelsArray[0])
+    height = len(pixelsArray)
+    rows = []
+    for y in xrange(height):
+        row = []
+        for x in xrange(width):
+            p = pixelsArray[y][x]
+            color = channelsToHex(p[0],p[1],p[2])
+            a = round(p[3]/250.0)
+            row.append([color,a])
+        rows.append(row)
+    return rows
+
+def channelsToHex(r,g,b):
+    h = hex((r<<16)+(g<<8)+(b<<0))[2:]
+    while len(h)<6: h = '0'+h
+    return h
 
 def compareImgToArr(img1, imgArr):
     r=0
