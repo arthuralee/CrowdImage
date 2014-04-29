@@ -6,7 +6,7 @@ from django.template import RequestContext
 from django.views.decorators.http import require_http_methods, require_POST, require_GET
 from django.views.decorators.csrf import csrf_exempt
 import json
-import string, random, thread, math
+import string, random, thread, math, numpy
 from PIL import Image
 
 #################
@@ -32,14 +32,31 @@ def submitPic(request):
     scaleImage(img)
     orig_width, orig_height = img.size
     img = padImage(img)
+    p_width, p_height = img.size
 
-    image = models.Image(height = orig_height, width=orig_width, email=email)
+    image = models.Image(
+        height = orig_height, width=orig_width,
+        padded_height = p_height,
+        padded_width = p_width,
+        email=email)
     image.save()
     
     # save image blocks in new thread
-    thread.start_new_thread(saveBlocks, (img, image))
+    # thread.start_new_thread(saveBlocks, (img, image))
+    saveBlocks(img, image)
     
-    return HttpResponse("height: %d, width: %d" %(orig_height, orig_width))
+    # try to reconstruct original image from blocks
+
+    reImg = constructImgFromBlocks(image, img)
+    re_width, re_height = reImg.size
+
+    # send image
+    response = HttpResponse(mimetype="image/jpeg")
+    reImg.save(response, "jpeg")
+    return response
+    # comparison = compareImgs(img, reImg)
+    # return HttpResponse("ERRORS --> r: %d, g: %d, b: %d, a: %d" % comparison)
+    # return HttpResponse("orig: (%d,%d), reconstruced: (%d,%d)" % (p_width,p_height, re_width,re_height))
 
 @require_GET
 @csrf_exempt
@@ -60,6 +77,65 @@ def returnBlock(request):
 ###################
 ##### HELPERS #####
 ###################
+
+def compareImgToArr(img1, imgArr):
+    r=0
+    g=0
+    b=0
+    a=0
+    width, height = img1.size
+    for y in xrange(height):
+        for x in xrange(width):
+            px1 = img1.getpixel((x,y))
+            px2 = imgArr[y][x]
+            if px1[0] != px2[0]: r += 1
+            if px1[1] != px2[1]: g += 1
+            if px1[2] != px2[2]: b += 1
+            if px1[3] != px2[3]: a += 1
+    return (r,g,b,a)
+
+# takes an image object and looks in the db for all
+# of its blocks and then reconstructs the original
+# image from them
+def constructImgFromBlocks(image, paddedImg):
+    blocks = models.Block.objects.filter(image=image).order_by('index')
+    
+    # construct image array
+    width = image.padded_width
+    height = image.padded_height
+    newImgArr = [[(0,0,0,0) for x in xrange(width)] for x in xrange(height)] 
+
+    blocksPerRow = width/50 - 1
+    
+    for i in xrange(len(blocks)):
+        block = blocks[i]
+        blockPixels = block.getPixels()
+        xOffset = (i % blocksPerRow) * 50
+        yOffset = (i / blocksPerRow) * 50
+        for y in xrange(100):
+            for x in xrange(100):
+                # todo: combine alpha values here
+                newImgArr[y+yOffset][x+xOffset] = tuple(blockPixels[y][x])
+
+
+    print("done constructing image array")
+    newImgNumpyArr = numpy.array(newImgArr)
+    comparison = compareImgToArr(paddedImg, newImgNumpyArr)
+    print("ERRORS --> r: %d, g: %d, b: %d, a: %d" % comparison)
+    newImg = createImageFromArray(newImgArr)
+    # newImg = Image.fromarray(newImgNumpyArr, mode="RGBA")
+    return newImg
+
+def createImageFromArray(arr):
+    w = len(arr[0])
+    h = len(arr)
+    img = Image.new(mode='RGBA', size=(w,h), color=(0,0,0,0))
+    for y in xrange(h):
+        for x in xrange(w):
+            pixel = arr[y][x]
+            img.putpixel((x,y),pixel)
+    return img
+
 
 # takes in the padded image data and the model that stores
 # the original image sizes, email, etc
@@ -87,16 +163,17 @@ def saveBlocks(imgData, image):
     print("all blocks saved")
 
 def getNumBlocks(width, height):
-    return ((width/50)) * ((height/50))
+    # -1 because blocks are actuall 100x100
+    return ((width/50)-1) * ((height/50)-1)
 
 def getBlockFromArray(pixelArray, i):
     width = len(pixelArray[0])
     height = len(pixelArray)
 
-    blocksPerRow = width/50
+    blocksPerRow = (width/50) - 1
     
-    xOffset = i % blocksPerRow
-    yOffset = i / blocksPerRow
+    xOffset = (i % blocksPerRow) * 50
+    yOffset = (i / blocksPerRow) * 50
 
     rows = []
     for y in xrange(100):

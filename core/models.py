@@ -14,6 +14,8 @@ class Image(models.Model):
 	email = models.CharField(max_length=75)
 	blocksLeft = models.IntegerField(null=True)
 	totalBlocks = models.IntegerField(null=True)
+	padded_width = models.IntegerField(null=True)
+	padded_height = models.IntegerField(null=True)
 
 	# decrements block count and returns true if no more blocks
 	def finishBlock(self):
