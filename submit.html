@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CrowdImage</title>
+  <link rel="stylesheet" href="css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/submit.css">
+</head>
+<body>
+
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        <h1>CrowdImage</h1>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-3">
+        <ul class="nav nav-pills nav-stacked">
+          <li><a href="index.html">Home</a></li>
+          <li class="active"><a href="submit.html">Submit</a></li>
+          <li><a href="worker.html">Work</a></li>
+        </ul>
+      </div>
+      <div class="col-md-9">
+        <form id="submit-form">
+          <div id="screen1-upload" class="screen">
+            <h3>Step 1: Submit an image for processing</h3>
+            <div class="wrapper">
+              <input type="file" id="img-input" />
+              <div id="img-input-overlay">
+                <span class="glyphicon glyphicon-upload"></span>
+                <p>drag and drop a photo here</p>
+              </div>
+            </div>
+          </div>
+          <div id="screen2-draw" class="screen initial">
+            <h3>Step 2: Draw a polygon around the subject</h3>
+            <div class="row">
+              <div class="col-md-9">
+                <p>Click around your subject to add points to the polygon. The polygon will automatically be closed and filled for you. You do not have to be very precise- this is just for indicating what the subject is. If you make a mistake, you can use the undo button.</p>
+              </div>
+              <div class="col-md-3">
+                <a class="btn btn-primary" onclick="step3();">Continue</a>
+                <a class="btn btn-default" onclick="app.undo();">Undo</a>
+              </div>
+            </div>
+            <canvas id="sub-img" width="700" height="400"></canvas>
+          </div>
+          <div id="screen3-info" class="screen initial">
+            <h3>Step 3: Let us contact you!</h3>
+            <p>We will use your email address only for the purposes of notifying you when the processing is complete</p>
+            <div class="form-group">
+              <label for="inputEmail1">Email address</label>
+              <input type="email" class="form-control" id="inputEmail1" name="email" placeholder="Enter email">
+            </div>
+            <button type="submit" class="btn btn-primary">Submit</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+  <script src="//code.createjs.com/easeljs-0.7.1.min.js"></script>
+  <script src="http://polyk.ivank.net/polyk.js"></script>
+  <script src="js/CISubmit.js"></script>
+  <script src="js/submit.js"></script>
+</body>
+</html>
