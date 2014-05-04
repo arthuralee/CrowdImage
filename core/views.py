@@ -47,8 +47,9 @@ def submitPic(request):
     
     # try to reconstruct original image from blocks
 
-    reImg = constructImgFromBlocks(image, img)
-    re_width, re_height = reImg.size
+    # reImg = constructImgFromBlocks(image, img)
+    # re_width, re_height = reImg.size
+    reImg = finishImage(image)
 
     # send image
     response = HttpResponse(mimetype="image/png")
@@ -73,11 +74,44 @@ def getBlock(request):
 @require_POST
 @csrf_exempt
 def returnBlock(request):
+    key = 
+    pixels = 
+
+    if key == None or pixels == None:
+        raise Exception("missing data in post")
+
+    block = models.Block.get_object_or_404(key=key)
+    updateBlock(pixels, block)
+    block.finished = True
+    image = block.image
+    image.blocksLeft -= 1;
+    image.save()
+    block.save()
+    if image.blocksLeft <= 0:
+        finishImage(image)
     return HttpResponse()
 
 ###################
 ##### HELPERS #####
 ###################
+
+def finishImage(image):
+    img = constructImgFromBlocks(image)
+    # todo: crop image here
+    emailImg(img, image.email)
+    blocks = models.Block.objects.filter(image=image)
+    for block in blocks:
+        block.delete()
+    image.delete()
+    return img
+
+def emailImg(img):
+    return None
+
+# updates the opacity in each block from the
+# selections from the front end
+def updateBlock(selectionArray, block):
+    return None
 
 # takes 2D array of pixels as 4 channels and returns
 # 2D array of pixels as (hex,alpha[0-1])
@@ -119,7 +153,7 @@ def compareImgToArr(img1, imgArr):
 # takes an image object and looks in the db for all
 # of its blocks and then reconstructs the original
 # image from them
-def constructImgFromBlocks(image, paddedImg):
+def constructImgFromBlocks(image, paddedImg=None):
     blocks = models.Block.objects.filter(image=image).order_by('index')
     
     # construct image array
@@ -141,9 +175,10 @@ def constructImgFromBlocks(image, paddedImg):
 
 
     print("done constructing image array")
-    newImgNumpyArr = numpy.array(newImgArr)
-    comparison = compareImgToArr(paddedImg, newImgNumpyArr)
-    print("ERRORS --> r: %d, g: %d, b: %d, a: %d" % comparison)
+    # newImgNumpyArr = numpy.array(newImgArr)
+    if paddedImg != None:
+        comparison = compareImgToArr(paddedImg, newImgNumpyArr)
+        print("ERRORS --> r: %d, g: %d, b: %d, a: %d" % comparison)
     newImg = createImageFromArray(newImgArr)
     # newImg = Image.fromarray(newImgNumpyArr, mode="RGBA")
     return newImg
