@@ -22,10 +22,16 @@
         </ul>
       </div>
       <div class="col-md-9">
+        <div class="alert alert-success alert-dismissable" id="success" style="display: none;">
+          <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+          <p>Success! The image has been submitted. Watch your inbox for an email from us.</p>
+        </div>
         <p>CrowdImage uses human computation to perform image manipulation tasks. It is the final project for 05-499C Crowd Programming at Carnegie Mellon University. Right now, CrowdImage only performs the background removal operation.</p>
       </div>
     </div>
   </div>
-    
+  <script>
+    if (window.location.hash == '#submitted') document.querySelector('#success').style.display = 'block';
+  </script>
 </body>
 </html>

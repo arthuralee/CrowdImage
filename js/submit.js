@@ -26,8 +26,8 @@ function step3() {
   var poly = [];
   poly = poly.concat.apply(poly, app.getPixels());
 
-  if (poly.length == 0 || !PolyK.IsSimple(poly)) {
-    alert('Bad polygon!');
+  if (poly.length < 6 || !PolyK.IsSimple(poly)) {
+    $('#badModal').modal();
     return;
   }
 
@@ -37,14 +37,16 @@ function step3() {
 
 $('#submit-form').submit(function(e) {
   e.preventDefault();
+  formData = new FormData(this);
+  formData.append('selectedPixels',JSON.stringify(app.getPixels()));
   $.ajax( {
-    url: 'https://crowdimage.herokuapp.com/api/submitpic',
+    url: 'http://jackmontgomery.io/crowdimage/api/submitpic',
     type: 'POST',
-    data: new FormData(this),
+    data: formData,
     processData: false,
     contentType: false,
     success: function(data) {
-      console.log(data);
+      window.location('index.html#submitted');
     }
   });
 });

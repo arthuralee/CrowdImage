@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>CrowdImage</title>
+  <title>CrowdImage - Submit</title>
   <link rel="stylesheet" href="css/bootstrap.min.css">
   <link rel="stylesheet" href="css/submit.css">
 </head>
@@ -27,7 +27,7 @@
           <div id="screen1-upload" class="screen">
             <h3>Step 1: Submit an image for processing</h3>
             <div class="wrapper">
-              <input type="file" id="img-input" />
+              <input type="file" id="img-input" name="photo" />
               <div id="img-input-overlay">
                 <span class="glyphicon glyphicon-upload"></span>
                 <p>drag and drop a photo here</p>
@@ -49,7 +49,7 @@
           </div>
           <div id="screen3-info" class="screen initial">
             <h3>Step 3: Let us contact you!</h3>
-            <p>We will use your email address only for the purposes of notifying you when the processing is complete</p>
+            <p>We'll let you know when the processing is done, and we won't use your email for anything else.</p>
             <div class="form-group">
               <label for="inputEmail1">Email address</label>
               <input type="email" class="form-control" id="inputEmail1" name="email" placeholder="Enter email">
@@ -60,8 +60,26 @@
       </div>
     </div>
   </div>
-  
+
+  <div class="modal fade" id="badModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+          <h4 class="modal-title" id="myModalLabel">Bad polygon!</h4>
+        </div>
+        <div class="modal-body">
+          You have drawn a bad polygon. Please make sure there are at least three edges, and that no edges intersect.
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+    
   <script src="js/jquery.min.js"></script>
+  <script src="js/bootstrap.min.js"></script>
   <script src="js/easeljs-0.7.1.min.js"></script>
   <script src="js/polyk.js"></script>
   <script src="js/CISubmit.js"></script>
