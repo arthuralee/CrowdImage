@@ -140,7 +140,7 @@ def emailImg(img, email):
     print ("saving image")
     img.save('tmp/img1.png', 'PNG')
     print ("emailing image")
-    fromEmail = 'crowdimage@gmail.com'
+    fromEmail = ' crowdimage@gmail.com'
 
     subject = 'Your image has been processed'
     toList = [email]
