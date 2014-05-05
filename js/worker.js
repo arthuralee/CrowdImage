@@ -12,7 +12,7 @@ var prevSel = [];
 var nodes = [];
 var id;
 
-$.get('http://crowdimage.herokuapp.com/api/getblock/', function(data) {
+$.get('http://jackmontgomery.io/crowdimage/api/getblock/', function(data) {
   id = data.id;
   $('#blockid').html(data.id);
 
