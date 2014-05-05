@@ -6,7 +6,9 @@ from django.template import RequestContext
 from django.views.decorators.http import require_http_methods, require_POST, require_GET
 from django.views.decorators.csrf import csrf_exempt
 import json
-import string, random, thread, math, numpy
+import string, random, thread, math
+import numpy as np
+from matplotlib.path import Path
 from PIL import Image
 
 #################
@@ -25,14 +27,23 @@ def submitPic(request):
     if email == None or email == "": # check that there is an email
         raise Exception("No email provided")
     
-    imgData = request.FILES.get('image')
+    imgData = request.FILES.get('photo')
     if imgData == None: # check that there is an image
         raise Exception("No image provided")
+
+    polygon = request.POST.get('selectedPixels')
+    if polygon == None: # check that there is an image
+        raise Exception("No polygon provided")
+
+
     img = Image.open(imgData)
-    scaleImage(img)
+    # scaleImage(img)
     orig_width, orig_height = img.size
     img = padImage(img)
     p_width, p_height = img.size
+
+    selectedPixels = poly2Pixels(json.loads(polygon), p_width, p_height)
+    # print(selectedPixels)
 
     image = models.Image(
         height = orig_height, width=orig_width,
@@ -42,19 +53,20 @@ def submitPic(request):
     image.save()
     
     # save image blocks in new thread
-    # thread.start_new_thread(saveBlocks, (img, image))
-    saveBlocks(img, image)
+    thread.start_new_thread(saveBlocks, (img, image, selectedPixels))
+    # saveBlocks(img, image)
+    return HttpResponse()
     
     # try to reconstruct original image from blocks
 
     # reImg = constructImgFromBlocks(image, img)
     # re_width, re_height = reImg.size
-    reImg = finishImage(image)
+    # reImg = finishImage(image)
 
     # send image
-    response = HttpResponse(mimetype="image/png")
-    reImg.save(response, "png")
-    return response
+    # response = HttpResponse(mimetype="image/png")
+    # reImg.save(response, "png")
+    # return response
     # comparison = compareImgs(img, reImg)
     # return HttpResponse("ERRORS --> r: %d, g: %d, b: %d, a: %d" % comparison)
     # return HttpResponse("orig: (%d,%d), reconstruced: (%d,%d)" % (p_width,p_height, re_width,re_height))
@@ -63,9 +75,12 @@ def submitPic(request):
 @csrf_exempt
 def getBlock(request):
     block = models.Block.pickBlock()
+
     if block == None:
+        print("no block found")
         return JsonResponse({})
     else:
+        print("block found")
         pixels = pixelsToFrontEnd(block.getPixels())
         data = {'id': block.key, 'height':100,
             'width':100, 'pixels':pixels}
@@ -74,28 +89,32 @@ def getBlock(request):
 @require_POST
 @csrf_exempt
 def returnBlock(request):
-    key = request.post.get('key')
-    pixels = request.post.get('pixels')
+    key = request.POST.get('id')
+    pixels = request.POST.get('pixels')
 
     if key == None:
         raise Exception("missing key in post data")
     if pixels == None:
         raise Exception("missing pixels in post data")
 
-    block = models.Block.get_object_or_404(key=key)
+    block = get_object_or_404(models.Block, key=key)
+
+    # parse json
+    pixels =json.loads(pixels)
     
     # in case someone else already submitted this block
-    if block.finished:
+    if block.done:
         return
     
     updateBlock(pixels, block)
-    block.finished = True
+    block.done = True
     
     image = block.image
     image.blocksLeft -= 1;
     image.save()
     block.save()
     
+    print("blocksLeft: %d" % image.blocksLeft)
     if image.blocksLeft <= 0:
         finishImage(image)
     return HttpResponse()
@@ -115,6 +134,7 @@ def finishImage(image):
     return img
 
 def emailImg(img, email):
+    print ("emailing image")
     return None
 
 # updates the opacity in each block from the
@@ -128,7 +148,7 @@ def updateBlock(selectionArray, block):
     for y in xrange(h):
         for x in xrange(w):
             (r,g,b,_) = originalPixels[y][x]
-            a = selectionArray[y][x]
+            a = (selectionArray[y][x]) * 255
             newPixels[y][x] = (r,g,b,a)
 
     block.setPixels(newPixels)
@@ -190,8 +210,6 @@ def constructImgFromBlocks(image, paddedImg=None):
         yOffset = (i / blocksPerRow) * 50
         for y in xrange(100):
             for x in xrange(100):
-                # todo: combine alpha values here
-
                 absx = x+xOffset
                 absy = y+yOffset
 
@@ -241,27 +259,32 @@ def createImageFromArray(arr):
 
 # takes in the padded image data and the model that stores
 # the original image sizes, email, etc
-def saveBlocks(imgData, image):
+def saveBlocks(imgData, image, selectedPixels):
     width, height = imgData.size
     print("width: %d, height: %d" % (width,height))
     rows = []
     for y in xrange(height):
         row = []
         for x in xrange(width):
-            pixel = imgData.getpixel((x,y))
-            row.append(pixel)
+            (r,g,b,_) = imgData.getpixel((x,y))
+            a = (selectedPixels[y][x]) * 255
+            row.append((r,g,b,a))
         rows.append(row)
     
     numBlocks = getNumBlocks(width,height)
     image.blocksLeft = numBlocks
     image.totalBlocks = numBlocks
-    image.save()
+    
 
     for i in xrange(numBlocks):
-        blockPixels = getBlockFromArray(rows, i)
+        (blockPixels, done) = getBlockFromArray(rows, i)
         block = models.Block(image=image, index=i)
         block.setPixels(blockPixels)
+        block.done = done
+        if(done):
+            image.blocksLeft -=1
         block.save()
+    image.save()
     print("all blocks saved")
 
 def getNumBlocks(width, height):
@@ -277,16 +300,20 @@ def getBlockFromArray(pixelArray, i):
     xOffset = (i % blocksPerRow) * 50
     yOffset = (i / blocksPerRow) * 50
 
+    var = 0
     rows = []
     for y in xrange(100):
         y = y + yOffset
         row = []
         for x in xrange(100):
             x = x+xOffset
-            row.append(pixelArray[y][x])
+            (r,g,b,a) = pixelArray[y][x]
+            var += a/255
+            row.append((r,g,b,a))
         rows.append(row)
 
-    return rows
+    done = var == 0 or var == 100*100
+    return (rows,done)
 
 # scales image to about 0.5 megapixels
 # because thats still a crap ton of workers
@@ -322,36 +349,60 @@ def padImage(img):
 # creates blocks out of the image and
 # saves them into the db
 # meant to be called in a new thread
-def handleBlockCreation(image,poly):
-    imageLoc = image.img
-    blocks = image_utils.makeBlocks(img,poly)
-    i = 0
-    for b in blocks:
-        block = models.Block(
-            image = image,
-            pixels = b,
-            index = i
-        )
-        i += 1
-    return None
+# def handleBlockCreation(image,poly):
+#     imageLoc = image.img
+#     blocks = image_utils.makeBlocks(img,poly)
+#     i = 0
+#     for b in blocks:
+#         block = models.Block(
+#             image = image,
+#             pixels = b,
+#             index = i
+#         )
+#         i += 1
+#     return None
 
 def JsonResponse(data):
     return HttpResponse(json.dumps(data), content_type="application/json")
 
 
-def generatePixels(size):
-    inPixelLabeled =  ['444444', 1]
-    # outPixelLabeled = ['999999', 1]
-    # inPixelUnLabeled =  ['444444', 0]
-    outPixelUnLabeled = ['999999', 0]
+# def generatePixels(size):
+#     inPixelLabeled =  ['444444', 1]
+#     # outPixelLabeled = ['999999', 1]
+#     # inPixelUnLabeled =  ['444444', 0]
+#     outPixelUnLabeled = ['999999', 0]
+#     rows = []
+#     for r in xrange(size):
+#         row = []
+#         for p in xrange(size):
+#             if p <= int(r**1.03):
+#                 row.append(outPixelUnLabeled)
+#             else:
+#                 row.append(inPixelLabeled)
+#         rows.append(row)
+#     return rows
+
+def poly2Pixels(points, w, h):
     rows = []
-    for r in xrange(size):
+    path = Path(points)
+
+    for y in xrange(h):
         row = []
-        for p in xrange(size):
-            if p <= int(r**1.03):
-                row.append(outPixelUnLabeled)
-            else:
-                row.append(inPixelLabeled)
+        for x in xrange(w):
+            row.append(path.contains_point((x,y)))
         rows.append(row)
     return rows
+# pixelarray = poly2pixels(poly, width, height) # result in pixelarray
+# helper function to convert polygon into a 2d array of selected pixels
+# def poly2Pixels(poly_verts, nx, ny):
+#   # Create vertex coordinates for each grid cell...
+#   # (<0,0> is at the top left of the grid in this system)
+#   x, y = np.meshgrid(np.arange(nx), np.arange(ny))
+#   x, y = x.flatten(), y.flatten()
 
+#   points = np.vstack((x,y)).T
+
+#   grid = points_inside_poly(points, poly_verts)
+#   grid = grid.reshape((ny,nx))
+
+#   return grid
