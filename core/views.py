@@ -256,7 +256,7 @@ def constructImgFromBlocks(image, paddedImg=None):
 
                 # if absy>=height-50 and absx<50:
                     # d=1
-                if absx>=width-50:
+                if absy>=height-50:
                     d=2
 
                 a = oldA + (newA/d)
