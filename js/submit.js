@@ -46,7 +46,7 @@ $('#submit-form').submit(function(e) {
     processData: false,
     contentType: false,
     success: function(data) {
-      window.location('index.html#submitted');
+      window.location = 'index.html#submitted';
     }
   });
 });
