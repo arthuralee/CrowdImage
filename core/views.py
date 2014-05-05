@@ -101,7 +101,11 @@ def returnBlock(request):
         raise Exception("missing pixels in post data")
 
     block = get_object_or_404(models.Block, key=key)
+    thread.start_new_thread(processReturnBlock, (pixels, block))
 
+    return HttpResponse()
+
+def processReturnBlock(pixels, block):
     # parse json
     pixels =json.loads(pixels)
     
@@ -120,7 +124,6 @@ def returnBlock(request):
     print("blocksLeft: %d" % image.blocksLeft)
     if image.blocksLeft <= 0:
         finishImage(image)
-    return HttpResponse()
 
 ###################
 ##### HELPERS #####
