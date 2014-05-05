@@ -125,9 +125,9 @@ function interpolate(a,b) {
 function switchMode(mode) {
   window.mode = mode;
   if (mode == DRAW) {
-    $('#canvas').css('cursor', 'url(../img/cursor-pencil.png), auto');
+    $('#canvas').css('cursor', 'url(img/cursor-pencil.png), auto');
   } else if (mode == ERASE) {
-    $('#canvas').css('cursor', 'url(../img/cursor-eraser.png), auto');
+    $('#canvas').css('cursor', 'url(img/cursor-eraser.png), auto');
   }
 }
 
