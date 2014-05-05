@@ -254,9 +254,11 @@ def constructImgFromBlocks(image, paddedImg=None):
                 elif absx>=width-50:
                     d=2
 
-                # if absy>=height-50 and absx<50:
-                    # d=1
-                if absy>=height-50:
+                if absy>=height-50 and absx<50:
+                    d=1
+                elif absy>=height-50 and absx>=width-50:
+                    d=1
+                elif absy>=height-50:
                     d=2
 
                 a = oldA + (newA/d)
