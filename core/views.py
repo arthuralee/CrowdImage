@@ -5,11 +5,13 @@ from django.shortcuts import get_object_or_404, render_to_response, redirect
 from django.template import RequestContext
 from django.views.decorators.http import require_http_methods, require_POST, require_GET
 from django.views.decorators.csrf import csrf_exempt
+from django.core.mail import EmailMessage, EmailMultiAlternatives
 import json
 import string, random, thread, math
 import numpy as np
 from matplotlib.path import Path
 from PIL import Image
+import os
 
 #################
 ##### VIEWS #####
@@ -23,6 +25,7 @@ def submitView(request):
 @require_POST
 @csrf_exempt
 def submitPic(request):
+    print os.path.dirname(os.path.realpath(__file__))
     email = request.POST.get('email')
     if email == None or email == "": # check that there is an email
         raise Exception("No email provided")
@@ -134,8 +137,26 @@ def finishImage(image):
     return img
 
 def emailImg(img, email):
+    print ("saving image")
+    img.save('tmp/img1.png', 'PNG')
     print ("emailing image")
-    return None
+    fromEmail = 'crowdimage@gmail.com'
+
+    subject = 'Your image has been processed'
+    toList = [email]
+
+    text_content = ""
+    html_content = '<h1>image:</h1><img src="img1.png">'
+
+    email = EmailMultiAlternatives(subject, text_content, fromEmail, toList)
+    email.attach_alternative(html_content, "text/html")
+    # email.attach('your_image.png', img, 'image/png')
+    email.attach_file('tmp/img1.png')
+    print ("message sent")
+    # email.attach_file(img)
+    
+    email.send()
+    # return None
 
 # updates the opacity in each block from the
 # selections from the front end
