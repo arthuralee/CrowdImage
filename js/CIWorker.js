@@ -1,0 +1,3 @@
+var CIWorker = function(options) {
+
+};

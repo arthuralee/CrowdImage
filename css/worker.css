@@ -1,0 +1,13 @@
+#canvas {
+  border: 1px solid gray;
+  position: relative;
+  cursor: url(../img/cursor-pencil.png), auto;
+}
+
+.pixel {
+  position: absolute;
+}
+.pixel.selected {
+  /*background: url(../img/cross.gif) 70%;*/
+  border: 1px solid #f00;
+}

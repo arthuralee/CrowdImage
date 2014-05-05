@@ -1,0 +1,44 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CrowdImage - Work</title>
+  <link rel="stylesheet" href="css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/worker.css">
+</head>
+<body>
+
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        <h1>CrowdImage</h1>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-3">
+        <ul class="nav nav-pills nav-stacked">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="submit.html">Submit</a></li>
+          <li class="active"><a href="worker.html">Work</a></li>
+        </ul>
+      </div>
+      <div class="col-md-9">
+        <div class="row">
+          <div class="col-md-12">
+            <p>Thanks for contributing! This is block <strong id="blockid"></strong>. Red outlined pixels are the selected pixels.</p>
+            <button onclick="switchMode(DRAW)" class="btn btn-default">Draw</button>
+            <button onclick="switchMode(ERASE)" class="btn btn-default">Erase</button>
+            <button onclick="submit()" class="btn btn-primary">Submit</button><br><br>
+          </div>
+        </div>
+        <div id="canvas"></div><br>
+      </div>
+    </div>
+  </div>
+  
+  <script src="js/jquery.min.js"></script>
+  <script src="js/CIWorker.js"></script>
+  <script src="js/worker.js"></script>
+</body>
+</html>
