@@ -13,6 +13,11 @@ var nodes = [];
 var id;
 
 $.get('http://jackmontgomery.io/crowdimage/api/getblock/', function(data) {
+  if (data === {}) {
+    $('#workerdiv').html('No blocks right now. Come back later!');
+    return;
+  }
+
   id = data.id;
   $('#blockid').html(data.id);
 
