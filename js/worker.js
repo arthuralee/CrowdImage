@@ -153,7 +153,7 @@ function submit() {
     data: payload,
     type: 'POST',
     success: function(data) {
-      window.location('index.html#worked');
+      window.location = 'index.html#worked';
     }
   });
 }
