@@ -74,19 +74,28 @@ def getBlock(request):
 @require_POST
 @csrf_exempt
 def returnBlock(request):
-    key = 
-    pixels = 
+    key = request.post.get('key')
+    pixels = request.post.get('pixels')
 
-    if key == None or pixels == None:
-        raise Exception("missing data in post")
+    if key == None:
+        raise Exception("missing key in post data")
+    if pixels == None:
+        raise Exception("missing pixels in post data")
 
     block = models.Block.get_object_or_404(key=key)
+    
+    # in case someone else already submitted this block
+    if block.finished:
+        return
+    
     updateBlock(pixels, block)
     block.finished = True
+    
     image = block.image
     image.blocksLeft -= 1;
     image.save()
     block.save()
+    
     if image.blocksLeft <= 0:
         finishImage(image)
     return HttpResponse()
@@ -105,13 +114,24 @@ def finishImage(image):
     image.delete()
     return img
 
-def emailImg(img):
+def emailImg(img, email):
     return None
 
 # updates the opacity in each block from the
 # selections from the front end
 def updateBlock(selectionArray, block):
-    return None
+    h = w = 100
+    originalPixels = block.getPixels()
+
+    newPixels = [[(0,0,0,0) for x in xrange(w)] for x in xrange(h)]
+    
+    for y in xrange(h):
+        for x in xrange(w):
+            (r,g,b,_) = originalPixels[y][x]
+            a = selectionArray[y][x]
+            newPixels[y][x] = (r,g,b,a)
+
+    block.setPixels(newPixels)
 
 # takes 2D array of pixels as 4 channels and returns
 # 2D array of pixels as (hex,alpha[0-1])
@@ -171,7 +191,32 @@ def constructImgFromBlocks(image, paddedImg=None):
         for y in xrange(100):
             for x in xrange(100):
                 # todo: combine alpha values here
-                newImgArr[y+yOffset][x+xOffset] = tuple(blockPixels[y][x])
+
+                absx = x+xOffset
+                absy = y+yOffset
+
+                (r,g,b, newA) = tuple(blockPixels[y][x])
+                (_,_,_,oldA) = newImgArr[y+yOffset][x+xOffset]
+                
+                if absx<50 and absy<50:
+                    d=1
+                elif absx<50:
+                    d=2
+                elif absy<50:
+                    d=2
+                else:
+                    d=4
+
+                if absx>=width-50 and absy<50:
+                    d=1
+                elif absx>=width-50:
+                    d=2
+
+                a = oldA + (newA/d)
+                if(a>255):
+                    print("(%d,%d)" % (absx,absy))
+                    print(a)
+                newImgArr[absy][absx] = (r,g,b,a)
 
 
     print("done constructing image array")
