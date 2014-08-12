@@ -1,6 +1,6 @@
 CrowdImage
 ==========
-[crowdimage.herokuapp.com](http://crowdimage.herokuapp.com)
+https://arthuralee.github.io/CrowdImage
 
 Crowd-sourced image manipulation. CMU 05-499C Crowd Programming final project
   
